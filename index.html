@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>বিদ্যুৎ বিল ক্যালকুলেটর – আবাসিক</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f4f6f3;--card:#fff;--text:#16241b;--muted:#5d6b62;--line:#dfe6e0;--accent:#0f7a4a;--accent-2:#e7f4ec;--warn:#b45309}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#0f1713;--card:#17221c;--text:#e8f0ea;--muted:#9bb0a2;--line:#27372d;--accent:#4cc98a;--accent-2:#1b2f24;--warn:#f0b35a}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#0f1713;--card:#17221c;--text:#e8f0ea;--muted:#9bb0a2;--line:#27372d;--accent:#4cc98a;--accent-2:#1b2f24;--warn:#f0b35a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Hind Siliguri","Noto Sans Bengali","Kalpurush",system-ui,sans-serif;line-height:1.55}
+main{max-width:560px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:1.5rem;margin:8px 0 2px}
+.sub{color:var(--muted);margin:0 0 18px;font-size:.95rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+label{display:block;font-weight:600;margin-bottom:6px}
+input{width:100%;font:inherit;font-size:1.15rem;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text)}
+input:focus{outline:2px solid var(--accent);border-color:transparent}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.hint{color:var(--muted);font-size:.85rem;margin-top:6px}
+.or{text-align:center;color:var(--muted);font-size:.85rem;margin:12px 0}
+.total{background:var(--accent-2);border:1px solid var(--line);border-radius:14px;padding:18px;text-align:center;margin-bottom:14px}
+.total small{color:var(--muted)}
+.total .amt{font-size:2.3rem;font-weight:700;color:var(--accent);line-height:1.2}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.95rem}
+th,td{padding:8px 6px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--muted);font-weight:500;font-size:.85rem}
+tr.sum td{font-weight:600}
+tr.grand td{font-weight:700;border-bottom:none;color:var(--accent)}
+.bar{height:10px;border-radius:6px;background:var(--line);overflow:hidden;display:flex;margin:12px 0 4px}
+.bar span{display:block;height:100%}
+.note{color:var(--muted);font-size:.82rem}
+.note b{color:var(--warn);font-weight:600}
+.err{color:var(--warn);font-size:.9rem;margin-top:6px;min-height:1.2em}
+#printBtn{width:100%;font:inherit;font-weight:600;padding:12px;margin-bottom:14px;border:1px solid var(--accent);background:var(--card);color:var(--accent);border-radius:12px;cursor:pointer}
+#printBtn:hover{background:var(--accent-2)}
+.printonly{display:none;margin-bottom:12px;color:var(--muted);font-size:.9rem}
+@media print{
+html:root:not(#p){--bg:#fff;--card:#fff;--text:#000;--muted:#444;--line:#bbb;--accent:#0a5c37;--accent-2:#fff;color-scheme:light;padding:0}
+body{background:#fff}
+main{max-width:none;padding:0}
+main>.card:first-of-type,#printBtn,.sub{display:none}
+.printonly{display:block}
+.card,.total{break-inside:avoid}
+.bar span{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+<main>
+  <h1>⚡ বিদ্যুৎ বিল ক্যালকুলেটর</h1>
+  <p class="sub">আবাসিক (LT-A) গ্রাহক · জুন ২০২৬ থেকে কার্যকর BERC ট্যারিফ</p>
+
+  <div class="card">
+    <label for="units">মাসে ব্যবহৃত ইউনিট (kWh)</label>
+    <input id="units" type="number" inputmode="decimal" min="0" step="1" placeholder="যেমন ২৫০" autofocus>
+    <div class="or">অথবা মিটার রিডিং থেকে</div>
+    <div class="row">
+      <div><label for="prev">আগের রিডিং</label><input id="prev" type="number" inputmode="decimal" min="0" placeholder="০"></div>
+      <div><label for="curr">বর্তমান রিডিং</label><input id="curr" type="number" inputmode="decimal" min="0" placeholder="০"></div>
+    </div>
+    <div class="err" id="err"></div>
+    <div style="margin-top:12px">
+      <label for="kw">অনুমোদিত লোড (কিলোওয়াট)</label>
+      <input id="kw" type="number" inputmode="decimal" min="0.5" step="0.5" value="1">
+      <div class="hint">ডিমান্ড চার্জ: প্রতি কিলোওয়াটে ৪২ টাকা। বিলে আপনার অনুমোদিত লোড দেখুন।</div>
+    </div>
+  </div>
+
+  <div class="printonly" id="printMeta"></div>
+
+  <div class="total" id="totalBox" hidden>
+    <small>মোট বিল (ভ্যাটসহ)</small>
+    <div class="amt" id="total">৳ ০</div>
+    <small id="avg"></small>
+  </div>
+
+  <div class="card" id="detail" hidden>
+    <strong>হিসাবের বিবরণ</strong>
+    <div class="bar" id="bar"></div>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>স্ল্যাব</th><th>ইউনিট</th><th>রেট</th><th>টাকা</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <button id="printBtn" type="button" hidden>🖨️ প্রিন্ট করুন</button>
+
+  <p class="note">রেট জাতীয়ভাবে BERC নির্ধারিত, তাই DESCO, DPDC, NESCO, BPDB, ওজোপাডিকো ও পল্লী বিদ্যুতে একই। এখানে প্রিপেইড মিটারের রিবেট, সময়মতো পরিশোধের ছাড়, বকেয়া বা বিলম্ব ফি ধরা হয়নি, তাই আপনার প্রকৃত বিলের সাথে সামান্য ফারাক হতে পারে। <b>ট্যারিফ পরিবর্তন হলে রেট হালনাগাদ করতে হবে।</b></p>
+</main>
+
+<script>
+(function(){
+  var SLABS=[
+    {cap:75,rate:5.26,label:'০–৭৫'},
+    {cap:200,rate:8.50,label:'৭৬–২০০'},
+    {cap:300,rate:9.10,label:'২০১–৩০০'},
+    {cap:400,rate:9.62,label:'৩০১–৪০০'},
+    {cap:600,rate:15.01,label:'৪০১–৬০০'},
+    {cap:Infinity,rate:17.35,label:'৬০১+'}
+  ];
+  var LIFELINE={rate:4.63,label:'লাইফলাইন (০–৫০)'};
+  var DEMAND=42, VAT=0.05;
+  var COLORS=['#4cc98a','#8fd14f','#e6c229','#f0a030','#e8672c','#c8321f'];
+  var $=function(id){return document.getElementById(id)};
+  var fmt=function(n,d){return Number(n).toLocaleString('bn-BD',{minimumFractionDigits:d===undefined?2:d,maximumFractionDigits:d===undefined?2:d})};
+
+  function calc(u,kw){
+    var rows=[];
+    if(u<=50){ rows.push({label:LIFELINE.label,units:u,rate:LIFELINE.rate,amt:u*LIFELINE.rate,i:0}); }
+    else{
+      var prev=0;
+      SLABS.forEach(function(s,i){
+        var n=Math.max(0,Math.min(u,s.cap)-prev);
+        if(n>0) rows.push({label:s.label,units:n,rate:s.rate,amt:n*s.rate,i:i});
+        prev=s.cap;
+      });
+    }
+    var energy=rows.reduce(function(a,r){return a+r.amt},0);
+    var demand=DEMAND*kw;
+    var vat=(energy+demand)*VAT;
+    return {rows:rows,energy:energy,demand:demand,vat:vat,total:energy+demand+vat};
+  }
+
+  function render(){
+    var u=parseFloat($('units').value);
+    var kw=parseFloat($('kw').value);
+    if(isNaN(kw)||kw<0) kw=1;
+    if(isNaN(u)||u<0){ $('totalBox').hidden=true; $('detail').hidden=true; $('printBtn').hidden=true; return; }
+    var r=calc(u,kw);
+    $('totalBox').hidden=false; $('detail').hidden=false; $('printBtn').hidden=false;
+    $('printMeta').textContent='বিদ্যুৎ বিলের হিসাব · আবাসিক (LT-A) · '+new Date().toLocaleDateString('bn-BD',{day:'numeric',month:'long',year:'numeric'})+' · ব্যবহৃত ইউনিট: '+fmt(u,u%1?2:0)+' · অনুমোদিত লোড: '+fmt(kw,kw%1?1:0)+' kW';
+    $('total').textContent='৳ '+fmt(r.total,0);
+    $('avg').textContent=u>0?('ইউনিটপ্রতি গড় ৳ '+fmt(r.total/u)):'';
+    var h='';
+    r.rows.forEach(function(x){
+      h+='<tr><td>'+x.label+'</td><td>'+fmt(x.units,x.units%1?2:0)+'</td><td>'+fmt(x.rate)+'</td><td>'+fmt(x.amt)+'</td></tr>';
+    });
+    h+='<tr class="sum"><td colspan="3">এনার্জি চার্জ</td><td>'+fmt(r.energy)+'</td></tr>';
+    h+='<tr><td colspan="3">ডিমান্ড চার্জ ('+fmt(kw,kw%1?1:0)+' kW × ৪২)</td><td>'+fmt(r.demand)+'</td></tr>';
+    h+='<tr><td colspan="3">ভ্যাট (৫%)</td><td>'+fmt(r.vat)+'</td></tr>';
+    h+='<tr class="grand"><td colspan="3">মোট</td><td>'+fmt(r.total)+'</td></tr>';
+    $('rows').innerHTML=h;
+    var b='';
+    r.rows.forEach(function(x){
+      b+='<span style="width:'+(r.energy?x.amt/r.energy*100:0)+'%;background:'+COLORS[x.i]+'"></span>';
+    });
+    $('bar').innerHTML=b;
+  }
+
+  function fromReadings(){
+    var p=parseFloat($('prev').value), c=parseFloat($('curr').value);
+    if(isNaN(p)||isNaN(c)){ $('err').textContent=''; return; }
+    if(c<p){ $('err').textContent='বর্তমান রিডিং আগের রিডিংয়ের চেয়ে কম হতে পারে না।'; return; }
+    $('err').textContent='';
+    $('units').value=Math.round((c-p)*100)/100;
+    render();
+  }
+
+  $('units').addEventListener('input',function(){ $('prev').value=''; $('curr').value=''; $('err').textContent=''; render(); });
+  $('prev').addEventListener('input',fromReadings);
+  $('curr').addEventListener('input',fromReadings);
+  $('kw').addEventListener('input',render);
+  $('printBtn').addEventListener('click',function(){ try{ window.print(); }catch(e){ alert('প্রিন্ট শুরু করা যায়নি। ব্রাউজারের মেনু থেকে প্রিন্ট বেছে নিন (Ctrl+P)।'); } });
+})();
+</script>
+</body>
+</html>
